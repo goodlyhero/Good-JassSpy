@@ -13,6 +13,6 @@ copy **goodjasspy.ini** into your warcraft 3 directory.
 ### Availiable settings:
 
 #### [jasspy]:
-console - open console.
-hookjvm - hook calls and ncalls
+console - open console.\
+hookjvm - hook calls and ncalls\
 hookpresence - hook presence creation
