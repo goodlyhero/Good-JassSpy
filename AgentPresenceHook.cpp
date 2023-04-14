@@ -50,10 +50,10 @@ inline unsigned long long combine_numbers(unsigned int a, unsigned int b) {
 	return (unsigned long long)a | (((unsigned long long)b) << 32);
 }
 
-volatile int counted = 0;
+volatile int counter = 0;
 void __declspec(dllexport) __declspec(noinline) AgentPresence_BreakThisPlease(int presence, int born, size_t ptr)
 {
-	counted++;
+	counter++;
 }
 
 void InitAgentPresenceHook() {
