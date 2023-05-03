@@ -58,6 +58,7 @@ void __declspec(dllexport) __declspec(noinline) AgentPresence_BreakThisPlease(in
 
 void InitAgentPresenceHook() {
 	auto settings = INIReader::INIReader("goodjasspy.ini");
+	bool flush_buffer = settings.GetBoolean("presence", "flush_buffer", false);
 
 	breaks.reserve(100);
 	breaks.max_load_factor(0.25);
@@ -82,7 +83,7 @@ void InitAgentPresenceHook() {
 		}
 	}
 	
-	rcmp::hook_function<int(__thiscall*)(ptr_t, ptr_t) > (Warcraft::SetAgentPresenceHook, [](auto original, ptr_t agent, ptr_t data) {
+	rcmp::hook_function<int(__thiscall*)(ptr_t, ptr_t) > (Warcraft::SetAgentPresenceHook, [flush_buffer](auto original, ptr_t agent, ptr_t data) {
 		if (data != nullptr && readInt(data+0xc)==0x2b61676c && agent != nullptr && readInt(data+0x14)>0 && readInt(data+0x18)>0) {
 			static ofstream Agentlog("agent_presence_log");
 			ptr_t vftable = read<ptr_t>(agent);
@@ -93,16 +94,15 @@ void InitAgentPresenceHook() {
 			DWORD turn = GetTurn();
 			DWORD presence_tag = readInt(data + 0x14);
 			DWORD born_tag = readInt(data + 0x18);
-			/*if (48672 == turn && (((int32_t)vftable - (int32_t)pGame + 0x6f000000) == 0x6F93049C) && presence_tag == 0xF068 && born_tag == 0xB88B9) {
-				DebugBreak();
-			}*///dark minion desync check
-			Agentlog << dyna_print("time: {:d}({:d}(ms)); VF: 0x{:X}({}); tags: (0x{:X},0x{:X})\n", turn, GetTime(),(int32_t)vftable - (int32_t)pGame+0x6f000000,type, presence_tag, born_tag);
-			//cout<<"tags: "<<born_tag<<" "<<presence_tag<<" combo: "<< combine_numbers(presence_tag, born_tag)<< endl;
+			Agentlog << dyna_print("time: {:d}({:d}(ms)); VF: 0x{:X}({}); tags: (0x{:X},0x{:X})\n", turn, GetTime(), (int32_t)vftable - (int32_t)pGame + 0x6f000000, type, presence_tag, born_tag);
+
+			if (flush_buffer) {
+				Agentlog << std::endl;
+			}
+
 			if (use_breaks) {
-				//cout << "breaks: true"<< endl;
 				unsigned long long tags = combine_numbers(presence_tag, born_tag);
 				if (breaks.find(tags)!=breaks.end()) {
-					//cout << "breaking!"<< endl;
 					AgentPresence_BreakThisPlease(presence_tag, born_tag,(size_t) data);
 				}
 			}
