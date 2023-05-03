@@ -7,6 +7,7 @@
 #include "Memory.h"
 #include <format>
 #include <fstream>
+#include "WarcraftFunction.h"
 
 #include "Calls.h"
 
@@ -56,9 +57,13 @@ void __declspec(dllexport) __declspec(noinline) AgentPresence_BreakThisPlease(in
 	counter++;
 }
 
+bool flush_buffer = false;
+bool print_ingame_only = false;
+
 void InitAgentPresenceHook() {
 	auto settings = INIReader::INIReader("goodjasspy.ini");
-	bool flush_buffer = settings.GetBoolean("presence", "flush_buffer", false);
+	flush_buffer = settings.GetBoolean("presence", "flush_buffer", false);
+	print_ingame_only = settings.GetBoolean("presence", "ingame_print", true);
 
 	breaks.reserve(100);
 	breaks.max_load_factor(0.25);
@@ -83,8 +88,15 @@ void InitAgentPresenceHook() {
 		}
 	}
 	
-	rcmp::hook_function<int(__thiscall*)(ptr_t, ptr_t) > (Warcraft::SetAgentPresenceHook, [flush_buffer](auto original, ptr_t agent, ptr_t data) {
-		if (data != nullptr && readInt(data+0xc)==0x2b61676c && agent != nullptr && readInt(data+0x14)>0 && readInt(data+0x18)>0) {
+	rcmp::hook_function<int(__thiscall*)(ptr_t, ptr_t) > (Warcraft::SetAgentPresenceHook, [](auto original, ptr_t agent, ptr_t data) {
+		if (
+			(!print_ingame_only || (GetGameType()& GAMEFLAG_INGAME))
+			data != nullptr &&
+			readInt(data+0xc)==0x2b61676c &&
+			agent != nullptr &&
+			readInt(data+0x14)>0 &&
+			readInt(data+0x18)>0
+			) {
 			static ofstream Agentlog("agent_presence_log");
 			ptr_t vftable = read<ptr_t>(agent);
 			const char* type = "unk";

@@ -2,6 +2,8 @@
 #include "Memory.h"
 #include "type_allias.h"
 #include "Warcraft Consts.h"
+#include "Consts.h"
+#include "WarcraftFunction.h"
 
 unsigned int ObjectToHandleId(ptr_t address)
 {
@@ -22,4 +24,27 @@ std::string GetIdFromPtr(ptr_t ptr)
     buffer[4] = 0;
     write<int>((ptr_t)buffer, read<int>(ptr));
     return std::string(buffer);
+}
+
+unsigned int GetGameType() {
+    unsigned int result = 0;
+
+    ptr_t gamestate = read<ptr_t>(pGame + 0xAB65F4);
+
+    if (gamestate != nullptr) {
+        result |= GAMEFLAG_OK;
+
+        bool loading = read<bool>(gamestate + 0x10);
+        unsigned int ingame = read<unsigned int>(gamestate + 0x8);
+
+        if (loading) {
+            result |= GAMEFLAG_LOADING;
+        }
+
+        if (ingame) {
+            result |= GAMEFLAG_INGAME;
+        }
+    }
+
+    return result;
 }
