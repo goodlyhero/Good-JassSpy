@@ -90,7 +90,7 @@ void InitAgentPresenceHook() {
 	
 	rcmp::hook_function<int(__thiscall*)(ptr_t, ptr_t) > (Warcraft::SetAgentPresenceHook, [](auto original, ptr_t agent, ptr_t data) {
 		if (
-			(!print_ingame_only || (GetGameType()& GAMEFLAG_INGAME))
+			(!print_ingame_only || (GetGameType()& GAMEFLAG_INGAME)) &&
 			data != nullptr &&
 			readInt(data+0xc)==0x2b61676c &&
 			agent != nullptr &&
